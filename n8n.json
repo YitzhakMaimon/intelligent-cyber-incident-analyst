@@ -1,0 +1,925 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1qFQEqZQ8Idk_U3DmKcNfbjxPIZ4lt_io",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -35968,
+        5040
+      ],
+      "id": "56db1134-bee2-4b1e-960a-49e21b0fc2e9",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "exZeJZJThK8qPc6U",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -35744,
+        5040
+      ],
+      "id": "783af9be-58a7-4247-999a-8e782367829b",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "exZeJZJThK8qPc6U",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b1c1d1-0001-4000-8000-000000000001",
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "txt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b1c1d1-0002-4000-8000-000000000002",
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b1c1d1-0003-4000-8000-000000000003",
+                    "leftValue": "={{ $json.fileExtension }}",
+                    "rightValue": "docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -35520,
+        5024
+      ],
+      "id": "bd634da9-7998-4e43-84a0-974d16c62301",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "extracted_text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -35296,
+        4848
+      ],
+      "id": "a840afe6-47fa-453f-81c5-25bacdeebce7",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/extract-docx",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -35296,
+        5232
+      ],
+      "id": "91b503a4-6bd2-4107-921f-c4e5414e07d6",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e5f6a7b8-c9d0-4234-be56-789012345ef0",
+              "name": "extracted_text",
+              "value": "={{ $json.extracted_text || $json.text || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -35072,
+        4944
+      ],
+      "id": "fd098a7a-ee89-4418-b8f1-990fc44c992b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"You are a cybersecurity document intelligence assistant. Analyze the following cybersecurity-related document and return ONLY a valid JSON object with these exact fields: summary (a 2-3 sentence plain-language summary of the document), classification (one of: critical_alert - an active, severe security incident requiring immediate response; siem_export - a raw log or SIEM data export; vulnerability_scan - a vulnerability or CVE scan report; incident_ticket - a tracked incident or support ticket record; informational - a general security notice with no immediate action needed; other - none of the above), sentiment (positive, neutral, or negative tone of the document), confidence_score (a number from 0.0 to 1.0 reflecting how confident you are in this classification), action_items (a list of concrete, specific follow-up actions the security team should take based on this document), entities (people: full names of any individuals mentioned, organizations: any company, vendor, or team names mentioned, dates: any dates mentioned, amounts: any CVE IDs, IP addresses, host counts, or other quantities mentioned). Document text: {{ JSON.stringify($json.extracted_text).slice(1, -1) }}\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.2,\n    \"responseMimeType\": \"application/json\",\n    \"responseSchema\": {\n      \"type\": \"OBJECT\",\n      \"properties\": {\n        \"summary\": { \"type\": \"STRING\" },\n        \"classification\": { \"type\": \"STRING\", \"enum\": [\"critical_alert\", \"siem_export\", \"vulnerability_scan\", \"incident_ticket\", \"informational\", \"other\"] },\n        \"sentiment\": { \"type\": \"STRING\", \"enum\": [\"positive\", \"neutral\", \"negative\"] },\n        \"confidence_score\": { \"type\": \"NUMBER\" },\n        \"action_items\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n        \"entities\": {\n          \"type\": \"OBJECT\",\n          \"properties\": {\n            \"people\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n            \"organizations\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n            \"dates\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n            \"amounts\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } }\n          },\n          \"required\": [\"people\", \"organizations\", \"dates\", \"amounts\"]\n        }\n      },\n      \"required\": [\"summary\", \"classification\", \"sentiment\", \"confidence_score\", \"action_items\", \"entities\"]\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "id": "c14c9925-9a05-4523-8b7f-28189de7ec4d",
+      "name": "Call Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -34848,
+        4944
+      ],
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "y6SPXhpkj0MhHAGE",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pull the raw JSON text Gemini returned and parse it into an object\nconst rawText = $node['Call Gemini'].json.candidates[0].content.parts[0].text;\nconst geminiData = JSON.parse(rawText);\n\n// 2. Re-emit every value under a fixed, named key so downstream nodes\n//    (enrichment API, Sheets, email) can always pull a specific field\n//    by name (e.g. $json.classification, $json.summary) regardless of\n//    what Gemini actually returned.\nreturn [{\n  json: {\n    summary: geminiData.summary || \"\",                // short human-readable summary of the document\n    classification: geminiData.classification || \"other\", // category: critical_alert / siem_export / vulnerability_scan / incident_ticket / informational / other\n    sentiment: geminiData.sentiment || \"neutral\",       // positive / neutral / negative\n    confidence_score: parseFloat(geminiData.confidence_score) || 0.0, // 0.0-1.0, how sure Gemini is\n    entities: geminiData.entities || { people: [], organizations: [], dates: [], amounts: [] }, // named sub-fields: people, organizations, dates, amounts\n    action_items: geminiData.action_items || [],        // list of recommended follow-up actions\n    filename: $node['Download file'].json.name || \"unknown\",       // original file name, e.g. alert.txt\n    file_type: $node['Download file'].json.fileExtension || \"unknown\" // txt / pdf / docx\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -34624,
+        4944
+      ],
+      "id": "c20db0b9-b3f2-4789-974e-7b7eaa780005",
+      "name": "Parse Gemini response"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/enrich",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"classification\": \"{{ $json.classification }}\",\n  \"sentiment\": \"{{ $json.sentiment }}\",\n  \"confidence_score\": {{ $json.confidence_score }},\n  \"entities\": {{ JSON.stringify($json.entities || {\"people\":[],\"organizations\":[],\"dates\":[],\"amounts\":[]}) }}\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -34400,
+        5024
+      ],
+      "id": "76c9dd9f-1ade-42f6-a849-dc1f5f4d4f1b",
+      "name": "Call enrichment API",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferLast"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -34176,
+        4848
+      ],
+      "id": "09734d2a-82e7-4c35-9eb4-143c0f28d0e4",
+      "name": "Combine"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1eATQBiOG0Fiqd4pyIBAcHp3zKADBKFiSfGyh3aulqEs/edit?usp=drivesdk",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "גיליון1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "document_id",
+              "displayName": "document_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "file_type",
+              "displayName": "file_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processed_at",
+              "displayName": "processed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "classification",
+              "displayName": "classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "routing_tag",
+              "displayName": "routing_tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sensitivity",
+              "displayName": "sensitivity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action_items",
+              "displayName": "action_items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "entities",
+              "displayName": "entities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -33952,
+        4848
+      ],
+      "id": "e33d1b55-b577-4f83-87ae-0f978bee1606",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EWy3RIHIjMxrL7QX",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "yitzhak.maimon1@gmail.com",
+        "subject": "=[{{ $json.classification }}] New document processed: {{ $json.filename }}",
+        "message": "=<h2>Document Processed</h2>\n<p><b>File:</b> {{ $json.filename }}</p>\n<p><b>Classification:</b> {{ $json.classification }}</p>\n<p><b>Sentiment:</b> {{ $json.sentiment }}</p>\n<p><b>Department:</b> {{ $json.department }}</p>\n<p><b>Sensitivity:</b> {{ $json.sensitivity }}</p>\n<p><b>Routing tag:</b> {{ $json.routing_tag }}</p>\n<h3>Summary</h3>\n<p>{{ $json.summary }}</p>\n<h3>Action items</h3>\n<p>{{ $json.action_items && $json.action_items.length ? $json.action_items.join(', ') : 'None' }}</p>\n<hr>\n<p><i>Sent automatically by n8n + Gemini 3 Document Analyst</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -33952,
+        5040
+      ],
+      "id": "e3269e63-6b71-4f0a-8786-1c08f31a6867",
+      "name": "Send email",
+      "webhookId": "7db75914-4730-4b4e-9961-0d1b6336f38f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GuKcomExVg0MIsAQ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ `# Document Report: ${$json.filename}\n\n- **Document ID:** ${$json.document_id}\n- **File type:** ${$json.file_type}\n- **Processed at:** ${$json.processed_at}\n- **Classification:** ${$json.classification}\n- **Department:** ${$json.department}\n- **Sentiment:** ${$json.sentiment}\n- **Confidence score:** ${$json.confidence_score}\n- **Sensitivity:** ${$json.sensitivity}\n- **Routing tag:** ${$json.routing_tag}\n\n## Summary\n${$json.summary}\n\n## Action Items\n${($json.action_items && $json.action_items.length) ? $json.action_items.map(item => '- ' + item).join('\\n') : '- None'}\n` }}",
+        "name": "={{ $json.document_id }}.md",
+        "driveId": {
+          "__rl": true,
+          "value": "16HbwHgG-3Ibyg3mfRlETX-jOvtKAxOBa",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -33952,
+        4656
+      ],
+      "id": "eb6c3290-1818-4b7a-9dd0-6a1a63f1fc6a",
+      "name": "Create Markdown",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "exZeJZJThK8qPc6U",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ JSON.stringify($json, null, 2) }}",
+        "name": "={{ $json.document_id }}.json",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "16HbwHgG-3Ibyg3mfRlETX-jOvtKAxOBa",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -33952,
+        4464
+      ],
+      "id": "b4bf67d8-d3bf-4bbd-acca-3f2e66d77946",
+      "name": "Create JSON",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "exZeJZJThK8qPc6U",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.sensitivity }}",
+              "rightValue": "confidential",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -33952,
+        5232
+      ],
+      "id": "4592d45a-c704-40e9-bb2a-bbc0ca0bc218",
+      "name": "If 'confidential'"
+    },
+    {
+      "parameters": {
+        "sendTo": "yitzhak.maimon1@gmail.com",
+        "subject": "=🚨 CONFIDENTIAL document detected: {{ $json.filename }}",
+        "message": "=<h2 style=\"color:red\">Confidential Document Alert</h2>\n<p><b>File:</b> {{ $json.filename }}</p>\n<p><b>Classification:</b> {{ $json.classification }}</p>\n<p><b>Department:</b> {{ $json.department }}</p>\n<p><b>Routing tag:</b> {{ $json.routing_tag }}</p>\n<h3>Summary</h3>\n<p>{{ $json.summary }}</p>\n<hr>\n<p><i>Sensitivity alert sent automatically by n8n + Gemini 3 Document Analyst</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -33728,
+        5136
+      ],
+      "id": "5a071507-9079-4f2a-a026-5530b111b531",
+      "name": "Sensitivity Alerting",
+      "webhookId": "243e8c9c-7a3d-4459-91af-67000eb4d9e0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GuKcomExVg0MIsAQ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -33728,
+        5328
+      ],
+      "id": "86e1b62e-da47-468a-ab1f-b447bdf81c3a",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -35296,
+        5040
+      ],
+      "id": "3ce86fa3-a5b8-4c74-842d-87a5a3ac2c06",
+      "name": "Extract PDF2"
+    },
+    {
+      "parameters": {
+        "sendTo": "yitzhak.maimon1@gmail.com",
+        "subject": "=⚠️ n8n Error: Call enrichment API failed — {{ $('Parse Gemini response').item.json.filename || 'unknown file' }}",
+        "message": "=<h2 style=\"color:red\">Workflow Error Alert</h2>\n<p><b>Failed node:</b> Call enrichment API</p>\n<p><b>File:</b> {{ $('Parse Gemini response').item.json.filename || 'unknown' }}</p>\n<p><b>File type:</b> {{ $('Parse Gemini response').item.json.file_type || 'unknown' }}</p>\n<p><b>Classification (from Gemini):</b> {{ $('Parse Gemini response').item.json.classification || 'unknown' }}</p>\n<p><b>Error message:</b> {{ $json.error.message || $json.error || 'Unknown error' }}</p>\n<p><b>Error description:</b> {{ $json.error.description || 'N/A' }}</p>\n<p><b>Time:</b> {{ $now }}</p>\n<hr>\n<p><i>Sent automatically by the n8n error handler</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -34176,
+        5072
+      ],
+      "id": "527eb2cb-7ff2-433a-a4d1-a5e823f36dc1",
+      "name": "mail_error",
+      "webhookId": "a66e0524-e9ab-48ec-a0c5-477fa07fea5c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GuKcomExVg0MIsAQ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "###  🚀 Source & Download\n\n* **Incoming:** Files must be uploaded to the \"incoming_docs\" folder in google drive.\n\n* **Drive Link:** https://drive.google.com/drive/folders/1qFQEqZQ8Idk_U3DmKcNfbjxPIZ4lt_io\n",
+        "height": 1168,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -36080,
+        4288
+      ],
+      "typeVersion": 1,
+      "id": "01f6e8fa-3fed-4146-bf8e-c0ad7b5d99c0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "### 📄 Text Extraction\n* **Routing:** Switch node routes files by type.\n* **Extraction:** Nodes extract text from TXT, PDF, or Word files.\n",
+        "height": 1168,
+        "width": 640,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -35616,
+        4288
+      ],
+      "typeVersion": 1,
+      "id": "6546a354-3389-4435-8a0c-909df8484137",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### 🤖 AI Processing & Enrichment\n\n* **AI Analysis:** Gemini analyzes the extracted text and outputs a structured response.\n* **Data Enrichment:** Enrichment API adds missing details or updates internal data.\n* **Error Handling:** System sends an alert email immediately if the enrichment API fails.\n",
+        "height": 1200,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -34976,
+        4272
+      ],
+      "typeVersion": 1,
+      "id": "454f04c9-32e1-4b68-8eff-989ec09b8d35",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "### 📤 Data Distribution & Storage\n\n* **Storage:** System saves structured JSON and Markdown files directly to Google Drive.\n* **Tracking:** Append row node logs the data into a Google Sheets spreadsheet.\n* **Delivery:** System sends an email report and alerts if sensitive data is found.\n",
+        "height": 1216,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -34256,
+        4272
+      ],
+      "typeVersion": 1,
+      "id": "5f68175b-a553-4108-8201-304036deacd4",
+      "name": "Sticky Note7"
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract PDF2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Call Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Gemini response": {
+      "main": [
+        [
+          {
+            "node": "Call enrichment API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call enrichment API": {
+      "main": [
+        [
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "mail_error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Markdown",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If 'confidential'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 'confidential'": {
+      "main": [
+        [
+          {
+            "node": "Sensitivity Alerting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8cea4eb70e4e834fd29167fea3ccb338d84dd360c9b830ed3f139d714492cd04"
+  }
+}
